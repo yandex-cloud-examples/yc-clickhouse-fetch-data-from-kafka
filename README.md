@@ -1,5 +1,3 @@
-# Название сценария
+# Получение данных из Yandex Managed Service for Apache Kafka® в Yandex Managed Service for ClickHouse®
 
-Описание сценария и инструкция по его применению.
-
-Для практических руководств обязательна ссылка на документацию.
+В кластер [Managed Service for ClickHouse®](https://yandex.cloud/ru/docs/managed-clickhouse) вы можете в реальном времени поставлять данные из топиков кластера [Managed Service for Apache Kafka®](https://yandex.cloud/ru/docs/managed-kafka). Эти данные будут автоматически вставлены в таблицы ClickHouse® на [движке Kafka](https://clickhouse.com/docs/ru/engines/table-engines/integrations/kafka). Подготовка инфраструктуры для Managed Service for ClickHouse® и Managed Service for Apache Kafka® через Terraform описана в [практическом руководстве](https://yandex.cloud/ru/docs/tutorials/dataplatform/fetch-data-from-mkf), необходимый для настройки конфигурационный файл [data-from-kafka-to-clickhouse.tf](data-from-kafka-to-clickhouse.tf) расположен в этом репозитории.
