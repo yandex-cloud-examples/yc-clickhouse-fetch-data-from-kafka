@@ -89,6 +89,7 @@ resource "yandex_mdb_kafka_cluster" "kafka-cluster" {
         disk_type_id       = "network-hdd"
         disk_size          = 10 # GB
       }
+      kafka_config {}
     }
   }
 
@@ -136,6 +137,10 @@ resource "yandex_mdb_clickhouse_cluster" "clickhouse-cluster" {
   network_id         = yandex_vpc_network.network.id
   security_group_ids = [yandex_vpc_default_security_group.security-group.id]
 
+  lifecycle {
+    ignore_changes = [database, user,]
+  }
+
   clickhouse {
     resources {
       resource_preset_id = "s2.micro"
@@ -176,16 +181,19 @@ resource "yandex_mdb_clickhouse_cluster" "clickhouse-cluster" {
     subnet_id        = yandex_vpc_subnet.subnet-a.id
     assign_public_ip = true # Required for connection from the Internet
   }
+}
 
-  database {
-    name = local.clickhouse_db_name
-  }
+resource "yandex_mdb_clickhouse_database" "clickhouse-database" {
+  cluster_id = yandex_mdb_clickhouse_cluster.clickhouse-cluster.id
+  name       = local.clickhouse_db_name
+}
 
-  user {
-    name     = local.db_user_name
-    password = local.db_user_password
-    permission {
-      database_name = local.clickhouse_db_name
-    }
+resource "yandex_mdb_clickhouse_user" "clickhouse-user" {
+  cluster_id = yandex_mdb_clickhouse_cluster.clickhouse-cluster.id
+  name       = local.db_user_name
+  password   = local.db_user_password
+
+  permission {
+      database_name = yandex_mdb_clickhouse_database.clickhouse-database.name
   }
 }
