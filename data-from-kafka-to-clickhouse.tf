@@ -130,19 +130,15 @@ resource "yandex_mdb_kafka_user" "user-consumer" {
 
 # Infrastructure for the Managed Service for ClickHouse® cluster
 
-resource "yandex_mdb_clickhouse_cluster" "clickhouse-cluster" {
+resource "yandex_mdb_clickhouse_cluster_v2" "clickhouse-cluster" {
   description        = "Managed Service for ClickHouse® cluster"
   name               = local.clickhouse_cluster_name
   environment        = "PRODUCTION"
   network_id         = yandex_vpc_network.network.id
   security_group_ids = [yandex_vpc_default_security_group.security-group.id]
 
-  lifecycle {
-    ignore_changes = [database, user,]
-  }
-
-  clickhouse {
-    resources {
+  clickhouse = {
+    resources = {
       resource_preset_id = "s2.micro"
       disk_type_id       = "network-ssd"
       disk_size          = 10 # GB
@@ -150,50 +146,46 @@ resource "yandex_mdb_clickhouse_cluster" "clickhouse-cluster" {
 
     # Uncomment the next block if you are going to use only one Managed Service for Apache Kafka® cluster
 
-    #config {
-    #  kafka {
+    #config = {
+    #  kafka = {
     #    security_protocol = "SECURITY_PROTOCOL_SASL_SSL"
     #    sasl_mechanism    = "SASL_MECHANISM_SCRAM_SHA_512"
     #    sasl_username     = yandex_mdb_kafka_user.user-consumer.name
     #    sasl_password     = yandex_mdb_kafka_user.user-consumer.password
     #  }
     #}
-
-    # Uncomment the next block if you are going to use multiple Managed Service for Apache Kafka® clusters. Specify topic name and consumer credentials.
-
-    #config {
-    #  kafka_topic {
-    #    name = "<topic name>"
-    #    settings {
-    #    security_protocol = "SECURITY_PROTOCOL_SASL_SSL"
-    #    sasl_mechanism    = "SASL_MECHANISM_SCRAM_SHA_512"
-    #    sasl_username     = "<name of the user for the consumer>"
-    #    sasl_password     = "<password of the user for the consumer>"
-    #    }
-    #  }
-    #}
-
   }
 
-  host {
-    type             = "CLICKHOUSE"
-    zone             = "ru-central1-a"
-    subnet_id        = yandex_vpc_subnet.subnet-a.id
-    assign_public_ip = true # Required for connection from the Internet
+  hosts = {
+    "ch-host1" = {
+      type             = "CLICKHOUSE"
+      zone             = "ru-central1-a"
+      subnet_id        = yandex_vpc_subnet.subnet-a.id
+      assign_public_ip = true # Required for connection from the Internet
+      shard_name       = "shard1"
+    }
+  }
+
+  shards = {
+    "shard1" = {}
+  }
+
+  maintenance_window {
+    type = "ANYTIME"
   }
 }
 
 resource "yandex_mdb_clickhouse_database" "clickhouse-database" {
-  cluster_id = yandex_mdb_clickhouse_cluster.clickhouse-cluster.id
+  cluster_id = yandex_mdb_clickhouse_cluster_v2.clickhouse-cluster.id
   name       = local.clickhouse_db_name
 }
 
 resource "yandex_mdb_clickhouse_user" "clickhouse-user" {
-  cluster_id = yandex_mdb_clickhouse_cluster.clickhouse-cluster.id
+  cluster_id = yandex_mdb_clickhouse_cluster_v2.clickhouse-cluster.id
   name       = local.db_user_name
   password   = local.db_user_password
 
   permission {
-      database_name = yandex_mdb_clickhouse_database.clickhouse-database.name
+    database_name = yandex_mdb_clickhouse_database.clickhouse-database.name
   }
 }
